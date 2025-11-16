@@ -1115,7 +1115,7 @@ Model LoadModel(const char *fileName)
 #endif
 
     // Make sure model transform is set to identity matrix!
-    model.transform = MatrixIdentity();
+    model.transform = R_MatrixIdentity();
 
     if ((model.meshCount != 0) && (model.meshes != NULL))
     {
@@ -1146,7 +1146,7 @@ Model LoadModelFromMesh(Mesh mesh)
 {
     Model model = { 0 };
 
-    model.transform = MatrixIdentity();
+    model.transform = R_MatrixIdentity();
 
     model.meshCount = 1;
     model.meshes = (Mesh *)RL_CALLOC(model.meshCount, sizeof(Mesh));
@@ -1494,9 +1494,9 @@ void DrawMesh(Mesh mesh, Material material, Matrix transform)
     // NOTE: At this point the modelview matrix just contains the view matrix (camera)
     // That's because BeginMode3D() sets it and there is no model-drawing function
     // that modifies it, all use rlPushMatrix() and rlPopMatrix()
-    Matrix matModel = MatrixIdentity();
+    Matrix matModel = R_MatrixIdentity();
     Matrix matView = rlGetMatrixModelview();
-    Matrix matModelView = MatrixIdentity();
+    Matrix matModelView = R_MatrixIdentity();
     Matrix matProjection = rlGetMatrixProjection();
 
     // Upload view and projection matrices (if locations available)
@@ -1506,13 +1506,13 @@ void DrawMesh(Mesh mesh, Material material, Matrix transform)
     // Accumulate several model transformations:
     //    transform: model transformation provided (includes DrawModel() params combined with model.transform)
     //    rlGetMatrixTransform(): rlgl internal transform matrix due to push/pop matrix stack
-    matModel = MatrixMultiply(transform, rlGetMatrixTransform());
+    matModel = R_MatrixMultiply(transform, rlGetMatrixTransform());
 
     // Model transformation matrix is sent to shader uniform location: SHADER_LOC_MATRIX_MODEL
     if (material.shader.locs[SHADER_LOC_MATRIX_MODEL] != -1) rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_MODEL], matModel);
 
     // Get model-view matrix
-    matModelView = MatrixMultiply(matModel, matView);
+    matModelView = R_MatrixMultiply(matModel, matView);
 
     // Upload model normal matrix (if locations available)
     if (material.shader.locs[SHADER_LOC_MATRIX_NORMAL] != -1) rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_NORMAL], MatrixTranspose(MatrixInvert(matModel)));
@@ -1630,13 +1630,13 @@ void DrawMesh(Mesh mesh, Material material, Matrix transform)
     for (int eye = 0; eye < eyeCount; eye++)
     {
         // Calculate model-view-projection matrix (MVP)
-        Matrix matModelViewProjection = MatrixIdentity();
-        if (eyeCount == 1) matModelViewProjection = MatrixMultiply(matModelView, matProjection);
+        Matrix matModelViewProjection = R_MatrixIdentity();
+        if (eyeCount == 1) matModelViewProjection = R_MatrixMultiply(matModelView, matProjection);
         else
         {
             // Setup current eye viewport (half screen width)
             rlViewport(eye*rlGetFramebufferWidth()/2, 0, rlGetFramebufferWidth()/2, rlGetFramebufferHeight());
-            matModelViewProjection = MatrixMultiply(MatrixMultiply(matModelView, rlGetMatrixViewOffsetStereo(eye)), rlGetMatrixProjectionStereo(eye));
+            matModelViewProjection = R_MatrixMultiply(R_MatrixMultiply(matModelView, rlGetMatrixViewOffsetStereo(eye)), rlGetMatrixProjectionStereo(eye));
         }
 
         // Send combined model-view-projection matrix to shader
@@ -1721,9 +1721,9 @@ void DrawMeshInstanced(Mesh mesh, Material material, const Matrix *transforms, i
     // NOTE: At this point the modelview matrix just contains the view matrix (camera)
     // That's because BeginMode3D() sets it and there is no model-drawing function
     // that modifies it, all use rlPushMatrix() and rlPopMatrix()
-    Matrix matModel = MatrixIdentity();
+    Matrix matModel = R_MatrixIdentity();
     Matrix matView = rlGetMatrixModelview();
-    Matrix matModelView = MatrixIdentity();
+    Matrix matModelView = R_MatrixIdentity();
     Matrix matProjection = rlGetMatrixProjection();
 
     // Upload view and projection matrices (if locations available)
@@ -1758,7 +1758,7 @@ void DrawMeshInstanced(Mesh mesh, Material material, const Matrix *transforms, i
 
     // Accumulate internal matrix transform (push/pop) and view matrix
     // NOTE: In this case, model instance transformation must be computed in the shader
-    matModelView = MatrixMultiply(rlGetMatrixTransform(), matView);
+    matModelView = R_MatrixMultiply(rlGetMatrixTransform(), matView);
 
     // Upload model normal matrix (if locations available)
     if (material.shader.locs[SHADER_LOC_MATRIX_NORMAL] != -1) rlSetUniformMatrix(material.shader.locs[SHADER_LOC_MATRIX_NORMAL], MatrixTranspose(MatrixInvert(matModel)));
@@ -1875,13 +1875,13 @@ void DrawMeshInstanced(Mesh mesh, Material material, const Matrix *transforms, i
     for (int eye = 0; eye < eyeCount; eye++)
     {
         // Calculate model-view-projection matrix (MVP)
-        Matrix matModelViewProjection = MatrixIdentity();
-        if (eyeCount == 1) matModelViewProjection = MatrixMultiply(matModelView, matProjection);
+        Matrix matModelViewProjection = R_MatrixIdentity();
+        if (eyeCount == 1) matModelViewProjection = R_MatrixMultiply(matModelView, matProjection);
         else
         {
             // Setup current eye viewport (half screen width)
             rlViewport(eye*rlGetFramebufferWidth()/2, 0, rlGetFramebufferWidth()/2, rlGetFramebufferHeight());
-            matModelViewProjection = MatrixMultiply(MatrixMultiply(matModelView, rlGetMatrixViewOffsetStereo(eye)), rlGetMatrixProjectionStereo(eye));
+            matModelViewProjection = R_MatrixMultiply(R_MatrixMultiply(matModelView, rlGetMatrixViewOffsetStereo(eye)), rlGetMatrixProjectionStereo(eye));
         }
 
         // Send combined model-view-projection matrix to shader
@@ -2302,18 +2302,18 @@ void UpdateModelAnimationBones(Model model, ModelAnimation anim, int frame)
             for (int boneId = 0; boneId < anim.boneCount; boneId++)
             {
                 Transform *bindTransform = &model.bindPose[boneId];
-                Matrix bindMatrix = MatrixMultiply(MatrixMultiply(
+                Matrix bindMatrix = R_MatrixMultiply(R_MatrixMultiply(
                     MatrixScale(bindTransform->scale.x, bindTransform->scale.y, bindTransform->scale.z),
                     QuaternionToMatrix(bindTransform->rotation)),
                     MatrixTranslate(bindTransform->translation.x, bindTransform->translation.y, bindTransform->translation.z));
 
                 Transform *targetTransform = &anim.framePoses[frame][boneId];
-                Matrix targetMatrix = MatrixMultiply(MatrixMultiply(
+                Matrix targetMatrix = R_MatrixMultiply(R_MatrixMultiply(
                     MatrixScale(targetTransform->scale.x, targetTransform->scale.y, targetTransform->scale.z),
                     QuaternionToMatrix(targetTransform->rotation)),
                     MatrixTranslate(targetTransform->translation.x, targetTransform->translation.y, targetTransform->translation.z));
 
-                model.meshes[firstMeshWithBones].boneMatrices[boneId] = MatrixMultiply(MatrixInvert(bindMatrix), targetMatrix);
+                model.meshes[firstMeshWithBones].boneMatrices[boneId] = R_MatrixMultiply(MatrixInvert(bindMatrix), targetMatrix);
             }
 
             // Update remaining meshes with bones
@@ -3793,10 +3793,10 @@ void DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rota
     Matrix matRotation = MatrixRotate(rotationAxis, rotationAngle*DEG2RAD);
     Matrix matTranslation = MatrixTranslate(position.x, position.y, position.z);
 
-    Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);
+    Matrix matTransform = R_MatrixMultiply(R_MatrixMultiply(matScale, matRotation), matTranslation);
 
     // Combine model transformation matrix (model.transform) with matrix generated by function parameters (matTransform)
-    model.transform = MatrixMultiply(model.transform, matTransform);
+    model.transform = R_MatrixMultiply(model.transform, matTransform);
 
     for (int i = 0; i < model.meshCount; i++)
     {
@@ -4286,7 +4286,7 @@ static Model LoadOBJ(const char *fileName)
     unsigned int objMaterialCount = 0;
 
     Model model = { 0 };
-    model.transform = MatrixIdentity();
+    model.transform = R_MatrixIdentity();
 
     char *fileText = LoadFileText(fileName);
 
@@ -4875,7 +4875,7 @@ static Model LoadIQM(const char *fileName)
 
         for (int j = 0; j < model.meshes[i].boneCount; j++)
         {
-            model.meshes[i].boneMatrices[j] = MatrixIdentity();
+            model.meshes[i].boneMatrices[j] = R_MatrixIdentity();
         }
     }
 
@@ -6029,7 +6029,7 @@ static Model LoadGLTF(const char *fileName)
 
                 for (int j = 0; j < model.meshes[meshIndex].boneCount; j++)
                 {
-                    model.meshes[meshIndex].boneMatrices[j] = MatrixIdentity();
+                    model.meshes[meshIndex].boneMatrices[j] = R_MatrixIdentity();
                 }
 
                 meshIndex++; // Move to next mesh
@@ -6396,7 +6396,7 @@ static Model LoadVOX(const char *fileName)
     }
 
     // Build models from meshes
-    model.transform = MatrixIdentity();
+    model.transform = R_MatrixIdentity();
 
     model.meshCount = meshescount;
     model.meshes = (Mesh *)RL_CALLOC(model.meshCount, sizeof(Mesh));
@@ -6803,7 +6803,7 @@ static Model LoadM3D(const char *fileName)
                 model.meshes[i].boneMatrices = (Matrix *)RL_CALLOC(model.meshes[i].boneCount, sizeof(Matrix));
                 for (j = 0; j < model.meshes[i].boneCount; j++)
                 {
-                    model.meshes[i].boneMatrices[j] = MatrixIdentity();
+                    model.meshes[i].boneMatrices[j] = R_MatrixIdentity();
                 }
             }
         }
