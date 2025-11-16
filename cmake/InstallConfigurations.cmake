@@ -9,7 +9,7 @@ install(
 # PKG_CONFIG_LIBS_PRIVATE is used in raylib.pc.in
 if (NOT BUILD_SHARED_LIBS)
     include(LibraryPathToLinkerFlags)
-    set(PKG_CONFIG_LIBS_PRIVATE ${GLFW_PKG_LIBS})
+    set(PKG_CONFIG_LIBS_PRIVATE ${GLFW_PKG_LIBS}) 
     string(REPLACE ";" " " PKG_CONFIG_LIBS_PRIVATE "${PKG_CONFIG_LIBS_PRIVATE}")
 elseif (BUILD_SHARED_LIBS)
     set(PKG_CONFIG_LIBS_EXTRA "")
