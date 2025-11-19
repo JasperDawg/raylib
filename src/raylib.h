@@ -1060,8 +1060,8 @@ extern "C" { // Prevents name mangling of functions
 // Window-related functions
 RLAPI void
 InitWindow(int width, int height,
-           const char *title); // Initialize window and OpenGL context
-RLAPI void CloseWindow(void);  // Close window and unload OpenGL context
+           const char *title);  // Initialize window and OpenGL context
+RLAPI void rlCloseWindow(void); // Close window and unload OpenGL context
 RLAPI bool
 WindowShouldClose(void); // Check if application should close (KEY_ESCAPE
                          // pressed or windows close icon clicked)
@@ -1137,7 +1137,7 @@ RLAPI void DisableEventWaiting(void); // Disable waiting for events on
                                       // EndDrawing(), automatic events polling
 
 // Cursor-related functions
-RLAPI void ShowCursor(void);       // Shows cursor
+RLAPI void rlShowCursor(void);     // Shows cursor
 RLAPI void HideCursor(void);       // Hides cursor
 RLAPI bool IsCursorHidden(void);   // Check if cursor is not visible
 RLAPI void EnableCursor(void);     // Enables cursor (unlock cursor)
